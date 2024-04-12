@@ -1,43 +1,50 @@
 import java.util.*;
 
 class Election {
-    private Map<String, Integer> candidatesMap;
+    private Map<String, Integer> votes;
     private PriorityQueue<Map.Entry<String, Integer>> maxHeap;
 
     public Election() {
-        candidatesMap = new HashMap<>();
+        votes = new HashMap<>();
         maxHeap = new PriorityQueue<>((a, b) -> b.getValue() - a.getValue());
     }
 
-    public void initializeCandidates(List<String> candidates) {
+    public void initializeCandidates(LinkedList<String> candidates) {
         for (String candidate : candidates) {
-            candidatesMap.put(candidate, 0);
+            votes.put(candidate, 0);
         }
     }
 
     public void castVote(String candidate) {
-        candidatesMap.put(candidate, candidatesMap.get(candidate) + 1);
+        if (votes.containsKey(candidate)) {
+            votes.put(candidate, votes.get(candidate) + 1);
+        }
         updateHeap();
     }
 
     public void castRandomVote() {
         Random rand = new Random();
-        List<String> candidates = new ArrayList<>(candidatesMap.keySet());
-        String randomCandidate = candidates.get(rand.nextInt(candidates.size()));
+        List<String> candidateList = new ArrayList<>(votes.keySet());
+        String randomCandidate = candidateList.get(rand.nextInt(candidateList.size()));
         castVote(randomCandidate);
     }
 
     public void rigElection(String candidate) {
-        int remainingVotes = candidatesMap.size() - candidatesMap.get(candidate);
-        for (int i = 0; i < remainingVotes; i++) {
-            castVote(candidate);
+        int totalVotes = votes.size();
+        for (String c : votes.keySet()) {
+            if (!c.equals(candidate)) {
+                votes.put(c, 0);
+            }
         }
+        votes.put(candidate, totalVotes);
+        updateHeap();
     }
 
     public List<String> getTopKCandidates(int k) {
         List<String> topCandidates = new ArrayList<>();
-        for (int i = 0; i < k && !maxHeap.isEmpty(); i++) {
+        while (!maxHeap.isEmpty() && k > 0) {
             topCandidates.add(maxHeap.poll().getKey());
+            k--;
         }
         return topCandidates;
     }
@@ -50,7 +57,7 @@ class Election {
 
     private void updateHeap() {
         maxHeap.clear();
-        maxHeap.addAll(candidatesMap.entrySet());
+        maxHeap.addAll(votes.entrySet());
     }
 }
 
@@ -61,18 +68,12 @@ class ElectionSystem {
         election = new Election();
     }
 
-    public void initialize(List<String> candidates, int p) {
+    public void initializeElection(LinkedList<String> candidates, int p) {
         election.initializeCandidates(candidates);
     }
 
-    public void castVotes(List<String> votes) {
-        for (String vote : votes) {
-            election.castVote(vote);
-        }
-    }
-
-    public void castRandomVotes(int numVotes) {
-        for (int i = 0; i < numVotes; i++) {
+    public void castVotes(int p) {
+        for (int i = 0; i < p; i++) {
             election.castRandomVote();
         }
     }
@@ -81,12 +82,8 @@ class ElectionSystem {
         election.rigElection(candidate);
     }
 
-    public void printTopKCandidates(int k) {
-        System.out.println("Top " + k + " candidates after " + election.getTopKCandidates(k).size() + " votes: " + election.getTopKCandidates(k));
-    }
-
-    public void printRiggedTopKCandidates(int k) {
-        System.out.println("Top " + k + " candidates after rigging the election: " + election.getTopKCandidates(k));
+    public List<String> getTopKCandidates(int k) {
+        return election.getTopKCandidates(k);
     }
 
     public void auditElection() {
